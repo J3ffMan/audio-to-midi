@@ -75,12 +75,10 @@ class Converter:
             : self.bins // 2
         ]
 
-        for i, f in enumerate(self.frequencies):
-            if f >= self.min_freq:
-                self.min_bin = i
-                break
-        else:
-            self.min_bin = 0
+        self.min_bin = next(
+            (i for i, f in enumerate(self.frequencies) if f >= self.min_freq), 0
+        )
+
         for i, f in enumerate(self.frequencies):
             if f >= self.max_freq:
                 self.max_bin = i
@@ -155,7 +153,7 @@ class Converter:
             # Find the freq's equivalence class, adding the amplitudes.
             if freq_range[0] <= freq <= freq_range[2]:
                 return self._snap_to_key(pitch) + self.transpose
-        raise RuntimeError("Unmappable frequency: {}".format(freq[0]))
+        raise RuntimeError(f"Unmappable frequency: {freq[0]}")
 
     def _reduce_freqs(self, freqs):
         """
@@ -167,27 +165,21 @@ class Converter:
             note to a single amplitude by summing them together.
         """
 
-        reduced_freqs = []
-        for freq in freqs:
-            reduced_freqs.append((self._freq_to_pitch(freq[0]), freq[1]))
-
-        return reduced_freqs
+        return [(self._freq_to_pitch(freq[0]), freq[1]) for freq in freqs]
 
     def _samples_to_freqs(self, samples):
         amplitudes = numpy.fft.fft(samples)
-        freqs = []
+        freqs = [
+            [
+                self.frequencies[index],
+                numpy.sqrt(
+                    numpy.float_power(amplitudes[index].real, 2)
+                    + numpy.float_power(amplitudes[index].imag, 2)
+                ),
+            ]
+            for index in range(self.min_bin, self.max_bin)
+        ]
 
-        for index in range(self.min_bin, self.max_bin):
-            # frequency, amplitude
-            freqs.append(
-                [
-                    self.frequencies[index],
-                    numpy.sqrt(
-                        numpy.float_power(amplitudes[index].real, 2)
-                        + numpy.float_power(amplitudes[index].imag, 2)
-                    ),
-                ]
-            )
 
         # Transform the frequency info into midi compatible data.
         return self._reduce_freqs(freqs)
@@ -214,10 +206,11 @@ class Converter:
         """
 
         logging.info(str(self.info))
-        logging.info("window: {} ms".format(self.time_window))
+        logging.info(f"window: {self.time_window} ms")
         logging.info(
-            "frequencies: min = {} Hz, max = {} Hz".format(self.min_freq, self.max_freq)
+            f"frequencies: min = {self.min_freq} Hz, max = {self.max_freq} Hz"
         )
+
 
         with midi_writer.MidiWriter(
             outfile=self.outfile,
