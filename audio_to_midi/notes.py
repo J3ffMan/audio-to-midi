@@ -8,7 +8,7 @@ def generate():
 
     # C0
     base = [7.946362749, 8.1757989155, 8.4188780665]
-    
+
     # 12th root of 2
     multiplier = numpy.float_power(2.0, 1.0 / 12)
 
@@ -17,6 +17,6 @@ def generate():
         mid = multiplier * notes[i - 1][1]
         low = (mid + notes[i - 1][1]) / 2.0
         high = (mid + (multiplier * mid)) / 2.0
-        notes.update({i: [low, mid, high]})
+        notes[i] = [low, mid, high]
 
     return notes

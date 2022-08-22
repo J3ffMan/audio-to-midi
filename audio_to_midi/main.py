@@ -20,7 +20,7 @@ def _convert_beat_to_time(bpm, beat):
         ms_per_beat = bps * 1000
         return fraction * ms_per_beat
     except Exception:
-        raise RuntimeError("Invalid beat format: {}".format(beat))
+        raise RuntimeError(f"Invalid beat format: {beat}")
 
 
 def parse_args():
@@ -110,11 +110,7 @@ def parse_args():
     )
     args = parser.parse_args()
 
-    args.output = (
-        "{}.mid".format(os.path.basename(args.infile))
-        if not args.output
-        else args.output
-    )
+    args.output = args.output or f"{os.path.basename(args.infile)}.mid"
 
     if args.single_note:
         args.note_count = 1
@@ -128,9 +124,8 @@ def parse_args():
         args.time_window = _convert_beat_to_time(args.bpm, args.beat)
         print(args.time_window)
 
-    if args.pitch_range:
-        if args.pitch_range[0] > args.pitch_range[1]:
-            raise RuntimeError("Invalid pitch range: {}".format(args.pitch_range))
+    if args.pitch_range and args.pitch_range[0] > args.pitch_range[1]:
+        raise RuntimeError(f"Invalid pitch range: {args.pitch_range}")
 
     if args.condense_max:
         args.condense = True

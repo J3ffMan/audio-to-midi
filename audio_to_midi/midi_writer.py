@@ -118,13 +118,12 @@ class MidiWriter:
 
         for channel, notes in enumerate(notes):
             new_notes = set()
-            stale_notes = []
             for note in notes:
                 note_state = self.note_state[channel][note.pitch]
                 new_notes.add(note.pitch)
-                if (not self.condense) or (self.condense and not note_state.is_active):
+                if not self.condense or not note_state.is_active:
                     self._note_on(channel, note.pitch, note.velocity)
-                elif self.condense and note_state.is_active:
+                else:
                     event = self.stream.get_event(
                         midi.NoteOnEvent, note_state.event_pos
                     )
@@ -147,12 +146,15 @@ class MidiWriter:
                     for note in self.note_state[channel]
                     if self.note_state[channel][note].is_active
                 ]
-                for note in active_notes:
+                stale_notes = [
+                    note
+                    for note in active_notes
                     if (
                         note not in new_notes
-                        or self.note_state[channel][note].count > self.max_note_length
-                    ):
-                        stale_notes.append(note)
+                        or self.note_state[channel][note].count
+                        > self.max_note_length
+                    )
+                ]
 
                 for note in stale_notes:
                     self._note_off(channel, note)
